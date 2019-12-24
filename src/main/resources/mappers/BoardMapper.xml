@@ -4,35 +4,81 @@
   
   <mapper namespace="org.dsu.dc.mapper.BoardMapper">
   	<select id="getList" resultType="org.dsu.dc.domain.BoardVO">
-  		SELECT * FROM tbl_board
+  		SELECT * FROM use_history
+  	</select>
+  	<sql id="criteria">
+  		<trim prefix="(" suffix=") AND" prefixOverrides="OR">
+  			<foreach item="type" collection="typeArr">
+  				<trim prefix="OR">
+  					<choose>
+  						<when test="type == 'S'.toString()">
+  							STUDNO LIKE CONCAT('%', #{keyword}, '%')
+  						</when> 
+  						<when test="type == 'N'.toString()">
+  							NAME LIKE CONCAT('%', #{keyword}, '%')
+  						</when> 
+  						<when test="type == 'P'.toString()">
+  							PCNO LIKE CONCAT('%', #{keyword}, '%')
+  						</when> 
+  					</choose>
+  				</trim>
+  			</foreach>	
+  		</trim>
+  	</sql>
+  	
+  	<select id="getListWithPaging" 
+  			resultType="org.dsu.dc.domain.BoardVO">
+  		<![CDATA[
+  		SELECT bno, STUDNO, NAME, PCNO, STARTTIME, FINISHTIME
+  		FROM use_history
+  		WHERE 
+  		]]>
+  			<include refid="criteria"></include>
+  		<![CDATA[
+  		bno > 0
+  		ORDER BY bno DESC, STARTTIME DESC
+  		LIMIT #{pageStart}, #{amount}
+  		]]>
+  	</select>
+  	
+  	<select id="getTotalCount" resultType="int">
+  		<![CDATA[
+  			SELECT count(*) FROM use_history WHERE bno > 0 ]]>
   	</select>
   	
   	<insert id="insert">
-  		INSERT INTO tbl_board (title, content, writer)
-  		VALUES (#{title}, #{content}, #{writer})
+  		INSERT INTO use_history (STUDNO, NAME, PCNO)
+  		VALUES (#{STUDNO}, #{NAME}, #{PCNO})
   	</insert>
   	
   	<insert id="insertSelectKey" parameterType="org.dsu.dc.domain.BoardVO">
-  		INSERT INTO tbl_board (title, content, writer)
-  		VALUES (#{title}, #{content}, #{writer})
+  		INSERT INTO use_history (STUDNO, NAME, PCNO)
+  		VALUES (#{STUDNO}, #{NAME}, #{PCNO})
   		<selectKey keyProperty="bno" resultType="long" order="AFTER">
-  			SELECT MAX(bno) FROM tbl_board;
+  			SELECT MAX(bno) FROM use_history;
   		</selectKey>
   	</insert>
   	
   	<select id="read" resultType="org.dsu.dc.domain.BoardVO">
-  		SELECT * FROM tbl_board
+  		SELECT * FROM use_history
   		WHERE bno=#{bno}
   	</select>
   	
   	<delete id="delete">
-  		DELETE FROM tbl_board
+  		DELETE FROM use_history
   		WHERE bno=#{bno}
   	</delete>
   	
   	<update id="update">
-  		UPDATE tbl_board
-  		SET title=#{title}, content=#{content}, writer=#{writer}, updateDate=now()
+  		UPDATE use_history
+  		SET STUDNO=#{STUDNO}, NAME=#{NAME}, PCNO=#{PCNO}
   		WHERE bno=#{bno}
   	</update>
+  	
+  	<update id="finish">
+  		UPDATE use_history
+  		SET FINISHTIME=now()
+  		WHERE bno=#{bno}
+  	</update>
+  	
   </mapper>
